@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "fixtures": [
+    {
+      "id": "demo-default-calendar-view",
+      "surface": "setting",
+      "key": "demoDefaultCalendarView",
+      "value": "month"
+    }
+  ]
+}
