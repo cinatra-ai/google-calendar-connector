@@ -18,6 +18,7 @@ import type {
   HostConnectorConfigService,
 } from "@cinatra-ai/sdk-extensions";
 import { registerGoogleCalendarConnector } from "./deps";
+import { googleCalendarChatUserContextProvider } from "./index";
 
 export const SELFCHECK_TOOL_NAME = "google_calendar_extension_selfcheck";
 const PACKAGE_NAME = "@cinatra-ai/google-calendar-connector";
@@ -48,6 +49,16 @@ export function register(ctx: ExtensionHostContext): void {
       return userId;
     },
   });
+
+  // Chat user-context: contributes the user's appointment schedules to the
+  // chat system prompt, registration-driven (the chat runner resolves this
+  // capability instead of importing this package by name). The record carries
+  // this package's name, so the host's transitional boot-bridge registration
+  // of the SAME record idempotently collapses with this one.
+  ctx.capabilities.registerProvider(
+    "chat-user-context",
+    googleCalendarChatUserContextProvider,
+  );
 
   ctx.mcp.registerTool({
     name: SELFCHECK_TOOL_NAME,
