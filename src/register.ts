@@ -1,20 +1,54 @@
 // The google-calendar connector's `register(ctx)` server entry.
 //
-// Proof slice for the `mcp` + `settings` host ports: registers a UNIQUELY-named
-// diagnostic tool via ctx.mcp.registerTool whose handler also round-trips
-// ctx.settings (set → get → delete). The tool is NOT registered by any static
-// module, so its presence in tools/list + a working tools/call UNAMBIGUOUSLY
-// proves the register(ctx) → ctx.mcp path; and the round-trip proves the
-// request-time `settings` port works from a handler that captured `ctx` at
-// register time. The connector's real primitive `google_calendar_appointments_list`
-// is still served by the static mcp-module — left untouched.
+// Transport-registration cutover: the host no longer statically wires this connector — this entry binds
+// the connector's host deps AT ACTIVATION (legacy connector-config KV adapted
+// from the `@cinatra-ai/host:connector-config` capability service, resolved
+// LAZILY per call; the session user id from the granted `ctx.authSession`
+// port). SDK imports here stay TYPE-ONLY (host-peer value-import gate).
+//
+// It also keeps the original proof slice for the `mcp` + `settings` host
+// ports: a UNIQUELY-named diagnostic tool whose handler round-trips
+// ctx.settings (set → get → delete), proving the register(ctx) → ctx.mcp path
+// and the request-time `settings` port from a handler that captured `ctx` at
+// register time. The connector's real primitive
+// `google_calendar_appointments_list` is still served by the static mcp-module.
 
-import type { ExtensionHostContext } from "@cinatra-ai/sdk-extensions";
+import type {
+  ExtensionHostContext,
+  HostConnectorConfigService,
+} from "@cinatra-ai/sdk-extensions";
+import { registerGoogleCalendarConnector } from "./deps";
 
 export const SELFCHECK_TOOL_NAME = "google_calendar_extension_selfcheck";
 const PACKAGE_NAME = "@cinatra-ai/google-calendar-connector";
 
+function hostConfig(ctx: ExtensionHostContext): HostConnectorConfigService {
+  const provider = ctx.capabilities.resolveProviders("@cinatra-ai/host:connector-config")[0];
+  if (!provider) {
+    throw new Error(
+      `${PACKAGE_NAME}: host service "@cinatra-ai/host:connector-config" is not registered — ` +
+        `the host boot wiring (register-transport-connectors) must run before connector calls.`,
+    );
+  }
+  return provider.impl as HostConnectorConfigService;
+}
+
 export function register(ctx: ExtensionHostContext): void {
+  registerGoogleCalendarConnector({
+    readConnectorConfigFromDatabase: (connectorId, fallback) =>
+      hostConfig(ctx).read(connectorId, fallback),
+    writeConnectorConfigToDatabase: (connectorId, value) =>
+      hostConfig(ctx).write(connectorId, value),
+    requireSessionUserId: async () => {
+      const actor = await ctx.authSession.getActor();
+      const userId = actor?.userId;
+      if (!userId) {
+        throw new Error(`${PACKAGE_NAME}: no authenticated session user.`);
+      }
+      return userId;
+    },
+  });
+
   ctx.mcp.registerTool({
     name: SELFCHECK_TOOL_NAME,
     description:

@@ -11,22 +11,33 @@ export interface GoogleCalendarConnectorDeps {
   requireSessionUserId: () => Promise<string>;
 }
 
-let _deps: GoogleCalendarConnectorDeps | null = null;
+// Anchor the deps slot on `globalThis` via a namespaced+versioned Symbol so the
+// activation-time registration (this connector's serverEntry `register(ctx)`)
+// and runtime callers in SEPARATELY-COMPILED Next.js bundles resolve the SAME
+// slot. (Same cross-compilation reason as the apify/apollo/gemini/tailscale
+// deps slots + the SDK DI contracts.)
+const GOOGLE_CALENDAR_DEPS_KEY = Symbol.for(
+  "@cinatra-ai/google-calendar-connector:host-deps/v1",
+);
+type DepsHolder = { [k: symbol]: GoogleCalendarConnectorDeps | null | undefined };
+const _holder = globalThis as unknown as DepsHolder;
 
 export function registerGoogleCalendarConnector(deps: GoogleCalendarConnectorDeps): void {
-  _deps = deps;
+  _holder[GOOGLE_CALENDAR_DEPS_KEY] = deps;
 }
 
 export function getGoogleCalendarDeps(): GoogleCalendarConnectorDeps {
-  if (!_deps) {
+  const deps = _holder[GOOGLE_CALENDAR_DEPS_KEY];
+  if (!deps) {
     throw new Error(
       "@cinatra-ai/google-calendar-connector: host runtime deps not registered. " +
-        "Call registerGoogleCalendarConnector(deps) at boot.",
+        "The connector's serverEntry register(ctx) binds them at activation " +
+        "(tests: call registerGoogleCalendarConnector(stubDeps) in setup).",
     );
   }
-  return _deps;
+  return deps;
 }
 
 export function _resetGoogleCalendarDepsForTests(): void {
-  _deps = null;
+  _holder[GOOGLE_CALENDAR_DEPS_KEY] = null;
 }
