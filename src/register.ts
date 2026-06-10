@@ -55,10 +55,24 @@ export function register(ctx: ExtensionHostContext): void {
   // capability instead of importing this package by name). The record carries
   // this package's name, so the host's transitional boot-bridge registration
   // of the SAME record idempotently collapses with this one.
-  ctx.capabilities.registerProvider(
-    "chat-user-context",
-    googleCalendarChatUserContextProvider,
-  );
+  //
+  // GUARDED: this connector's serverEntry is already activated by hosts whose
+  // CHECKED-IN generated manifest predates this package's `capabilities` port
+  // request — there the granted-port proxy fail-louds on access. Until the
+  // host regenerates the manifest, degrade silently (the host boot bridge
+  // registers the same record), and never let the grant gap skip the
+  // registrations that follow below.
+  try {
+    ctx.capabilities.registerProvider(
+      "chat-user-context",
+      googleCalendarChatUserContextProvider,
+    );
+  } catch (err) {
+    console.warn(
+      `${PACKAGE_NAME}: chat-user-context registration skipped (capabilities port not granted yet):`,
+      err instanceof Error ? err.message : err,
+    );
+  }
 
   ctx.mcp.registerTool({
     name: SELFCHECK_TOOL_NAME,
