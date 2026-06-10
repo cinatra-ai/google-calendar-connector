@@ -43,7 +43,8 @@
       "mcp",
       "settings",
       "authSession",
-      "nango"
+      "nango",
+      "capabilities"
     ],
     "sdkAbiRange": "^2",
     "devFixtures": "cinatra/dev-fixtures.json"
