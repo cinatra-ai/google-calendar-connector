@@ -145,6 +145,25 @@ export const googleCalendarChatUserContextProvider = {
   },
 };
 
+// Appointment-schedules provider record (capability id
+// "appointment-schedules", cinatra#151 Stage 4): the STRUCTURED counterpart
+// of the chat-user-context contribution above. The host's CTA server action
+// (packages/agents cta-actions) resolves the live providers and lists the
+// user's bookable appointment schedules instead of value-importing
+// `getStoredGoogleCalendarAppointments`. `getSchedules` is cheap + local by
+// contract (reads the already-synced appointment store; no network).
+// Structurally typed on purpose (no SDK type import needed — the host SDK
+// contract is additive and lands with the host-side consumer).
+export const googleCalendarAppointmentSchedulesProvider = {
+  packageName: "@cinatra-ai/google-calendar-connector",
+  impl: {
+    getSchedules({ userId }: { userId?: string }): { title: string; bookingPageUrl: string }[] {
+      const { appointments } = getStoredGoogleCalendarAppointments(userId);
+      return appointments.map((a) => ({ title: a.title, bookingPageUrl: a.bookingPageUrl }));
+    },
+  },
+};
+
 export async function clearStoredGoogleCalendarAppointments() {
   writeSettings({});
 }

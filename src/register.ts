@@ -18,7 +18,10 @@ import type {
   HostConnectorConfigService,
 } from "@cinatra-ai/sdk-extensions";
 import { registerGoogleCalendarConnector } from "./deps";
-import { googleCalendarChatUserContextProvider } from "./index";
+import {
+  googleCalendarAppointmentSchedulesProvider,
+  googleCalendarChatUserContextProvider,
+} from "./index";
 
 export const SELFCHECK_TOOL_NAME = "google_calendar_extension_selfcheck";
 const PACKAGE_NAME = "@cinatra-ai/google-calendar-connector";
@@ -70,6 +73,22 @@ export function register(ctx: ExtensionHostContext): void {
   } catch (err) {
     console.warn(
       `${PACKAGE_NAME}: chat-user-context registration skipped (capabilities port not granted yet):`,
+      err instanceof Error ? err.message : err,
+    );
+  }
+
+  // Structured appointment schedules for the host's CTA server action
+  // (cinatra#151 Stage 4): packages/agents resolves `appointment-schedules`
+  // instead of value-importing getStoredGoogleCalendarAppointments. Same
+  // grant-gap guard as above (and the same cheap+local contract).
+  try {
+    ctx.capabilities.registerProvider(
+      "appointment-schedules",
+      googleCalendarAppointmentSchedulesProvider,
+    );
+  } catch (err) {
+    console.warn(
+      `${PACKAGE_NAME}: appointment-schedules registration skipped (capabilities port not granted yet):`,
       err instanceof Error ? err.message : err,
     );
   }
