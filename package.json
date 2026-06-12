@@ -59,6 +59,7 @@
     "devFixtures": "cinatra/dev-fixtures.json"
   },
   "scripts": {
+    "test": "vitest",
     "lint": "eslint . --no-inline-config"
   }
 }
