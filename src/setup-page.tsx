@@ -157,6 +157,10 @@ export default async function GoogleCalendarConnectorSetupPage({
                   placeholder="https://calendar.app.google/..."
                 />
               </InputGroup>
+              <FieldDescription>
+                Stored independently of the calendar connection — you can save
+                booking links before or without connecting Google Calendar.
+              </FieldDescription>
             </Field>
             <div>
               <Button type="submit">Add schedule</Button>
