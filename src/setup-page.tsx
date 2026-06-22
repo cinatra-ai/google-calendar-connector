@@ -158,8 +158,18 @@ export default async function GoogleCalendarConnectorSetupPage({
                 />
               </InputGroup>
               <FieldDescription>
-                Stored independently of the calendar connection — you can save
-                booking links before or without connecting Google Calendar.
+                A public Google Calendar appointment-schedule link
+                (calendar.app.google/…) the assistant shares so people can book
+                time with you — a share link, not a calendar sync. Get one in
+                Google Calendar:{" "}
+                <a
+                  href="https://support.google.com/calendar/answer/10729749"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Create → Appointment schedule
+                </a>
+                , then paste its public link here.
               </FieldDescription>
             </Field>
             <div>
