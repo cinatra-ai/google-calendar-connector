@@ -97,6 +97,29 @@ export default async function GoogleCalendarConnectorSetupPage({
           />
         </section>
 
+        {connection ? null : (
+          <p className="-mt-3 text-sm leading-6 text-muted-foreground">
+            Connecting requires shared Google OAuth credentials. Save your client
+            ID and secret in{" "}
+            <a
+              href="/connectors/cinatra-ai/google-oauth-connector/setup"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              Google OAuth configuration
+            </a>{" "}
+            first — create them in the{" "}
+            <a
+              href="https://console.cloud.google.com/apis/credentials"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              Google Cloud Console
+            </a>
+            .
+          </p>
+        )}
+
         <section className="soft-panel rounded-panel p-5">
           <h2 className="mb-3 text-sm font-semibold text-foreground">
             Add an appointment schedule
