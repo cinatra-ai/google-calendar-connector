@@ -16,7 +16,7 @@ import {
   InputGroupInput,
 } from "./components/ui/input-group";
 import { Alert, AlertDescription } from "./components/ui/alert";
-import { Field, FieldLabel } from "./components/ui/field";
+import { Field, FieldDescription, FieldLabel } from "./components/ui/field";
 import { getStoredGoogleCalendarAppointments } from "./index";
 import { addGoogleCalendarAppointmentScheduleAction } from "./setup-actions";
 
@@ -98,13 +98,10 @@ export default async function GoogleCalendarConnectorSetupPage({
         </section>
 
         {connection ? null : (
-          <p className="-mt-3 text-sm leading-6 text-muted-foreground">
+          <FieldDescription className="leading-6">
             Connecting requires shared Google OAuth credentials. Save your client
             ID and secret in{" "}
-            <a
-              href="/connectors/cinatra-ai/google-oauth-connector/setup"
-              className="underline underline-offset-4 hover:text-foreground"
-            >
+            <a href="/connectors/cinatra-ai/google-oauth-connector/setup">
               Google OAuth configuration
             </a>{" "}
             first — create them in the{" "}
@@ -112,12 +109,11 @@ export default async function GoogleCalendarConnectorSetupPage({
               href="https://console.cloud.google.com/apis/credentials"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline underline-offset-4 hover:text-foreground"
             >
               Google Cloud Console
             </a>
             .
-          </p>
+          </FieldDescription>
         )}
 
         <section className="soft-panel rounded-panel p-5">
