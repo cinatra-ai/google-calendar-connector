@@ -108,6 +108,7 @@ export default async function GoogleCalendarConnectorSetupPage({
             connectLabel="Connect Google Calendar"
             reconnectLabel="Reconnect"
             nangoFrontendConfig={nangoFrontendConfig}
+            disabled={!oauthConfigured}
             prerequisiteErrorMessage={
               oauthConfigured
                 ? undefined
