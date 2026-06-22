@@ -16,6 +16,7 @@
 import type {
   ExtensionHostContext,
   HostConnectorConfigService,
+  HostGoogleOAuthService,
 } from "@cinatra-ai/sdk-extensions";
 import { registerGoogleCalendarConnector } from "./deps";
 import {
@@ -37,12 +38,26 @@ function hostConfig(ctx: ExtensionHostContext): HostConnectorConfigService {
   return provider.impl as HostConnectorConfigService;
 }
 
+function hostGoogleOAuth(ctx: ExtensionHostContext): HostGoogleOAuthService {
+  const provider = ctx.capabilities.resolveProviders("@cinatra-ai/host:google-oauth")[0];
+  if (!provider) {
+    throw new Error(
+      `${PACKAGE_NAME}: host service "@cinatra-ai/host:google-oauth" is not registered — ` +
+        `the host boot wiring (register-transport-connectors) must run before connector calls.`,
+    );
+  }
+  return provider.impl as HostGoogleOAuthService;
+}
+
 export function register(ctx: ExtensionHostContext): void {
   registerGoogleCalendarConnector({
     readConnectorConfigFromDatabase: (connectorId, fallback) =>
       hostConfig(ctx).read(connectorId, fallback),
     writeConnectorConfigToDatabase: (connectorId, value) =>
       hostConfig(ctx).write(connectorId, value),
+    oauth: {
+      getStatus: () => hostGoogleOAuth(ctx).getStatus(),
+    },
     requireSessionUserId: async () => {
       const actor = await ctx.authSession.getActor();
       const userId = actor?.userId;

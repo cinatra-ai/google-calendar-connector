@@ -9,6 +9,17 @@ export interface GoogleCalendarConnectorDeps {
   // (e.g. requireAuthSession().user.id) so the connector carries no `@/lib/*`
   // import. Throws if there is no authenticated session.
   requireSessionUserId: () => Promise<string>;
+  // Connector-level Google-OAuth status (no userId scope). Host binds this to
+  // the `@cinatra-ai/host:google-oauth` service. Drives the connect-button
+  // prerequisite on the setup page: connecting Calendar requires the shared
+  // OAuth client to be configured first (mirrors gmail-connector's `oauth`).
+  oauth: {
+    getStatus(): Promise<{
+      status: "connected" | "incomplete" | "not_connected";
+      accountEmail?: string;
+      detail?: string;
+    }>;
+  };
 }
 
 // Anchor the deps slot on `globalThis` via a namespaced+versioned Symbol so the
