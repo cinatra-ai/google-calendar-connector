@@ -16,7 +16,7 @@ import {
   InputGroupInput,
 } from "./components/ui/input-group";
 import { Alert, AlertDescription } from "./components/ui/alert";
-import { Field, FieldLabel } from "./components/ui/field";
+import { Field, FieldDescription, FieldLabel } from "./components/ui/field";
 import { getStoredGoogleCalendarAppointments } from "./index";
 import { addGoogleCalendarAppointmentScheduleAction } from "./setup-actions";
 
@@ -96,6 +96,25 @@ export default async function GoogleCalendarConnectorSetupPage({
             nangoFrontendConfig={nangoFrontendConfig}
           />
         </section>
+
+        {connection ? null : (
+          <FieldDescription className="leading-6">
+            Connecting requires shared Google OAuth credentials. Save your client
+            ID and secret in{" "}
+            <a href="/connectors/cinatra-ai/google-oauth-connector/setup">
+              Google OAuth configuration
+            </a>{" "}
+            first — create them in the{" "}
+            <a
+              href="https://console.cloud.google.com/apis/credentials"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Google Cloud Console
+            </a>
+            .
+          </FieldDescription>
+        )}
 
         <section className="soft-panel rounded-panel p-5">
           <h2 className="mb-3 text-sm font-semibold text-foreground">
