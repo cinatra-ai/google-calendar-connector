@@ -18,6 +18,7 @@ import {
 import { Alert, AlertDescription } from "./components/ui/alert";
 import { Field, FieldDescription, FieldLabel } from "./components/ui/field";
 import { getStoredGoogleCalendarAppointments } from "./index";
+import { getGoogleCalendarDeps } from "./deps";
 import { addGoogleCalendarAppointmentScheduleAction } from "./setup-actions";
 
 // Nango frontend config + the user's primary saved connection are read from the
@@ -51,6 +52,19 @@ export default async function GoogleCalendarConnectorSetupPage({
   const nangoFrontendConfig = (await ctx.nango.getFrontendConfig?.()) ?? {};
   const connection =
     (await ctx.nango.getPrimarySavedConnections?.({ scope: "user", userId: actor.userId }))?.googleCalendar ?? null;
+
+  // Connecting Calendar requires the shared Google OAuth client (clientId +
+  // secret, configured in the google-oauth connector) to exist first. Read the
+  // connector-level status to gate the connect button. Fail OPEN if the host
+  // google-oauth service is unavailable, so a status-read hiccup never blocks
+  // an otherwise-working setup (the connect flow still guards server-side).
+  let oauthConfigured = true;
+  try {
+    const oauthStatus = await getGoogleCalendarDeps().oauth.getStatus();
+    oauthConfigured = oauthStatus.status === "connected";
+  } catch {
+    oauthConfigured = true;
+  }
 
   const { appointments, syncedAt } = getStoredGoogleCalendarAppointments(
     actor.userId,
@@ -94,10 +108,16 @@ export default async function GoogleCalendarConnectorSetupPage({
             connectLabel="Connect Google Calendar"
             reconnectLabel="Reconnect"
             nangoFrontendConfig={nangoFrontendConfig}
+            disabled={!oauthConfigured}
+            prerequisiteErrorMessage={
+              oauthConfigured
+                ? undefined
+                : "Save your Google OAuth client ID and secret in Google OAuth configuration first."
+            }
           />
         </section>
 
-        {connection ? null : (
+        {oauthConfigured ? null : (
           <FieldDescription className="leading-6">
             Connecting requires shared Google OAuth credentials. Save your client
             ID and secret in{" "}
