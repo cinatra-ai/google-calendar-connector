@@ -9,6 +9,7 @@ import type { ExtensionHostContext } from "@cinatra-ai/sdk-extensions";
 import { Main, PageHeader, PageContent } from "@cinatra-ai/sdk-ui/marketplace";
 import { NangoUserConnectButton } from "@cinatra-ai/sdk-ui/nango";
 import { Button } from "./components/ui/button";
+import { Link } from "./components/ui/link";
 import { LinkIcon } from "lucide-react";
 import {
   InputGroup,
@@ -121,17 +122,17 @@ export default async function GoogleCalendarConnectorSetupPage({
           <FieldDescription className="leading-6">
             Connecting requires shared Google OAuth credentials. Save your client
             ID and secret in{" "}
-            <a href="/connectors/cinatra-ai/google-oauth-connector/setup">
+            <Link href="/connectors/cinatra-ai/google-oauth-connector/setup">
               Google OAuth configuration
-            </a>{" "}
+            </Link>{" "}
             first — create them in the{" "}
-            <a
+            <Link
               href="https://console.cloud.google.com/apis/credentials"
               target="_blank"
               rel="noopener noreferrer"
             >
               Google Cloud Console
-            </a>
+            </Link>
             .
           </FieldDescription>
         )}
@@ -162,13 +163,13 @@ export default async function GoogleCalendarConnectorSetupPage({
                 (calendar.app.google/…) the assistant shares so people can book
                 time with you — a share link, not a calendar sync. Get one in
                 Google Calendar:{" "}
-                <a
+                <Link
                   href="https://support.google.com/calendar/answer/10729749"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   Create → Appointment schedule
-                </a>
+                </Link>
                 , then paste its public link here.
               </FieldDescription>
             </Field>
