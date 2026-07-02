@@ -59,7 +59,8 @@
       "capabilities"
     ],
     "sdkAbiRange": "^2",
-    "devFixtures": "cinatra/dev-fixtures.json"
+    "devFixtures": "cinatra/dev-fixtures.json",
+    "consumes": []
   },
   "scripts": {
     "test": "vitest",
