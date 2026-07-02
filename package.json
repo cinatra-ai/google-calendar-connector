@@ -50,8 +50,6 @@
     "dependencies": [],
     "serverEntry": "./register",
     "requestedHostPorts": [
-      "mcp",
-      "settings",
       "authSession",
       "nango",
       "capabilities"

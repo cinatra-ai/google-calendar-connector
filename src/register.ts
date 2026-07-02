@@ -6,12 +6,12 @@
 // LAZILY per call; the session user id from the granted `ctx.authSession`
 // port). SDK imports here stay TYPE-ONLY (host-peer value-import gate).
 //
-// It also keeps the original proof slice for the `mcp` + `settings` host
-// ports: a UNIQUELY-named diagnostic tool whose handler round-trips
-// ctx.settings (set → get → delete), proving the register(ctx) → ctx.mcp path
-// and the request-time `settings` port from a handler that captured `ctx` at
-// register time. The connector's real primitive
-// `google_calendar_appointments_list` is still served by the static mcp-module.
+// The connector's real primitive `google_calendar_appointments_list` is served
+// by the manifest-discovered mcp-module (src/mcp/module.ts), NOT via `ctx.mcp`,
+// so register(ctx) only binds deps + registers the chat-user-context and
+// appointment-schedules capability providers. It requests no `mcp`/`settings`
+// host ports: a diagnostic selfcheck probe that once exercised them was removed
+// (it was exposed to agents in production with no runtime purpose).
 
 import type {
   ExtensionHostContext,
@@ -24,7 +24,6 @@ import {
   googleCalendarChatUserContextProvider,
 } from "./index";
 
-export const SELFCHECK_TOOL_NAME = "google_calendar_extension_selfcheck";
 const PACKAGE_NAME = "@cinatra-ai/google-calendar-connector";
 
 function hostConfig(ctx: ExtensionHostContext): HostConnectorConfigService {
@@ -107,24 +106,4 @@ export function register(ctx: ExtensionHostContext): void {
       err instanceof Error ? err.message : err,
     );
   }
-
-  ctx.mcp.registerTool({
-    name: SELFCHECK_TOOL_NAME,
-    description:
-      "Diagnostic: confirms the google-calendar connector activated through the extension host ports " +
-      "(register(ctx) → ctx.mcp + a ctx.settings round-trip). Returns { ok, via, packageName, settingsRoundTrip }.",
-    handler: async () => {
-      // Request-time settings round-trip via the ctx captured at register time.
-      const probeKey = "selfcheck_probe";
-      await ctx.settings.set(probeKey, { probedVia: "register(ctx)" });
-      const readBack = await ctx.settings.get<{ probedVia?: string }>(probeKey);
-      await ctx.settings.delete(probeKey);
-      return {
-        ok: true,
-        via: "register(ctx)",
-        packageName: PACKAGE_NAME,
-        settingsRoundTrip: readBack?.probedVia === "register(ctx)",
-      };
-    },
-  });
 }

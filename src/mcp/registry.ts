@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { ExtensionMcpToolServer, ExtensionMcpToolResult } from "@cinatra-ai/sdk-extensions";
-import { createGoogleCalendarPrimitiveHandlers } from "./handlers";
+import { createGoogleCalendarPrimitiveHandlers, type GoogleCalendarActorResolver } from "./handlers";
 
 const TOOL_META: Record<string, { description: string; inputSchema: z.ZodTypeAny }> = {
   "google_calendar_appointments_list": {
@@ -9,8 +9,11 @@ const TOOL_META: Record<string, { description: string; inputSchema: z.ZodTypeAny
   },
 };
 
-export function registerGoogleCalendarPrimitives(server: ExtensionMcpToolServer) {
-  const handlers = createGoogleCalendarPrimitiveHandlers();
+export function registerGoogleCalendarPrimitives(
+  server: ExtensionMcpToolServer,
+  resolveActor?: GoogleCalendarActorResolver,
+) {
+  const handlers = createGoogleCalendarPrimitiveHandlers(resolveActor);
 
   for (const [name, handler] of Object.entries(handlers)) {
     const meta = TOOL_META[name] ?? { description: name, inputSchema: z.object({}).passthrough() };
