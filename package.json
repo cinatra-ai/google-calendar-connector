@@ -46,6 +46,10 @@
   "cinatra": {
     "apiVersion": "cinatra.ai/v1",
     "kind": "connector",
+    "vendor": {
+      "key": "cinatra-ai",
+      "name": "Cinatra"
+    },
     "displayName": "Google Calendar",
     "dependencies": [],
     "serverEntry": "./register",
