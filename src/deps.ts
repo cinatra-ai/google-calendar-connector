@@ -20,6 +20,19 @@ export interface GoogleCalendarConnectorDeps {
       detail?: string;
     }>;
   };
+  // The invoking user's Google Calendar connection status — whether a Nango
+  // connection exists for THIS user (app-connectors.html §II Connection status
+  // card + Check flow). Host binds this to `ctx.nango.getPrimarySavedConnections`
+  // scoped to the session user. Drives the status card badge and the Check
+  // action's live re-probe. A probe error PROPAGATES to the caller so the Check
+  // island restores the last-known badge rather than misreporting Disconnected.
+  getUserConnectionStatus: () => Promise<"connected" | "disconnected">;
+  // Disconnect the invoking user's Google Calendar Nango connection
+  // (app-connectors.html §II Disconnect confirm). Host binds this to the
+  // connector-authored `nango-system` surface: delete the upstream Nango
+  // connection, then clear this connector's saved-connection pointer records so
+  // the next status read fails closed. Self-scoped to the session user id.
+  disconnectUserConnection: () => Promise<void>;
 }
 
 // Anchor the deps slot on `globalThis` via a namespaced+versioned Symbol so the
