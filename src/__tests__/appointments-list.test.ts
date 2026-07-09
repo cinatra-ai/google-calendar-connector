@@ -37,6 +37,12 @@ function stubDeps(store: Store) {
     oauth: {
       getStatus: async () => ({ status: "not_connected" as const }),
     },
+    getUserConnectionStatus: async () => {
+      throw new Error("getUserConnectionStatus is not exercised by the list handler");
+    },
+    disconnectUserConnection: async () => {
+      throw new Error("disconnectUserConnection is not exercised by the list handler");
+    },
   };
   return { deps, reads, writes };
 }
