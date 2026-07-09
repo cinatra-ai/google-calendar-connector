@@ -13,11 +13,19 @@
 // connector's injected `requireSessionUserId` dep (so there is NO `@/lib/*`
 // import), then the schedule is saved through the connector's own
 // `addUserGoogleCalendarAppointmentSchedule`.
+//
+// Outcome protocol: codes-only (cinatra-ai/cinatra#1107 / #1186). This redirects
+// with a stable `notice`/`error` CODE — never the raw exception message — so a
+// crafted `?error=<text>` can't inject arbitrary toast content. The setup page's
+// <SearchParamToast> island (src/setup-flash.ts) maps each code to a STATIC
+// message.
 
 import { redirect } from "next/navigation";
 import { requireExtensionAction } from "@cinatra-ai/sdk-extensions";
+import { flashHref } from "@cinatra-ai/sdk-extensions/flash-href";
 import { getGoogleCalendarDeps } from "./deps";
 import { addUserGoogleCalendarAppointmentSchedule } from "./index";
+import { mapAppointmentScheduleErrorToCode } from "./setup-flash";
 
 const GOOGLE_CALENDAR_PACKAGE_ID = "@cinatra-ai/google-calendar-connector";
 const SETUP_PAGE = "/connectors/cinatra-ai/google-calendar-connector/setup";
@@ -31,12 +39,8 @@ export async function addGoogleCalendarAppointmentScheduleAction(formData: FormD
   try {
     await addUserGoogleCalendarAppointmentSchedule(userId, url);
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unable to add the Google Calendar appointment schedule.";
-    redirect(`${SETUP_PAGE}?error=${encodeURIComponent(message)}`);
+    redirect(flashHref(SETUP_PAGE, { error: mapAppointmentScheduleErrorToCode(error) }));
   }
 
-  redirect(`${SETUP_PAGE}?saved=1`);
+  redirect(flashHref(SETUP_PAGE, { notice: "schedule-saved" }));
 }
