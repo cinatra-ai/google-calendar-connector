@@ -15,6 +15,7 @@ import { NangoUserConnectButton } from "@cinatra-ai/sdk-ui/nango";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@cinatra-ai/sdk-ui/tabs";
 import { Button } from "./components/ui/button";
 import { Link } from "./components/ui/link";
+import { Separator } from "./components/ui/separator";
 import { LinkIcon } from "lucide-react";
 import {
   InputGroup,
@@ -93,13 +94,16 @@ export default async function GoogleCalendarConnectorSetupPage({
       />
       <PageContent className="max-w-3xl pb-8">
         <Tabs defaultValue={defaultTab} className="gap-6">
-          <div className="mt-[18px] flex items-end gap-[18px]">
-            <TabsList>
+          {/* The etched paired-line rule stretches from the last tab to the
+              page edge (design-system Tabs; PageHeader's own divider is off
+              above so the two rules never stack). */}
+          <div className="grid grid-cols-[auto_1fr] items-end gap-7">
+            <TabsList className="border-b-0">
               <TabsTrigger value="connection">Connection</TabsTrigger>
               <TabsTrigger value="appointments">Appointment schedules</TabsTrigger>
               <TabsTrigger value="help">Help</TabsTrigger>
             </TabsList>
-            <hr aria-hidden="true" className="divider-etched mb-[11px] flex-1" />
+            <Separator major decorative className="mb-[11px] self-end" />
           </div>
 
           <TabsContent value="connection" className="flex flex-col gap-6">
