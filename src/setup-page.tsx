@@ -109,25 +109,6 @@ export default async function GoogleCalendarConnectorSetupPage({
       ? "appointments"
       : "setup";
 
-  const oauthPrerequisite = (
-    <>
-      Connecting requires shared Google OAuth credentials. Save your client ID
-      and secret in{" "}
-      <Link href="/connectors/cinatra-ai/google-oauth-connector/setup">
-        Google OAuth configuration
-      </Link>{" "}
-      first — create them in the{" "}
-      <Link
-        href="https://console.cloud.google.com/apis/credentials"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Google Cloud Console
-      </Link>
-      .
-    </>
-  );
-
   return (
     // Standard connector-setup PAGE chrome — header + content in the SAME Wide
     // column. The status badge that once sat top-right of the header now lives
@@ -163,18 +144,26 @@ export default async function GoogleCalendarConnectorSetupPage({
             fields={
               <div className="flex flex-col gap-6">
                 <section className="soft-panel rounded-panel p-5">
-                  <p className="text-sm font-medium text-foreground">
-                    Google Calendar account
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {connection
-                      ? `Connected${connection.email ? ` as ${connection.email}` : ""}`
-                      : "Not connected"}
-                  </p>
-                  {oauthConfigured ? null : (
-                    <FieldDescription className="mt-3 leading-6">
-                      {oauthPrerequisite}
-                    </FieldDescription>
+                  {connection ? (
+                    <>
+                      <p className="text-sm font-medium text-foreground">
+                        Google Calendar account
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {`Connected${connection.email ? ` as ${connection.email}` : ""}`}
+                      </p>
+                    </>
+                  ) : (
+                    // Not-connected card (owner review pull/45): the card holds
+                    // only the OAuth-credentials prerequisite line, with "Google
+                    // OAuth credentials" linking to that connector's setup page.
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      Connecting requires shared{" "}
+                      <Link href="/connectors/cinatra-ai/google-oauth-connector/setup">
+                        Google OAuth credentials
+                      </Link>
+                      .
+                    </p>
                   )}
                 </section>
 
@@ -188,7 +177,7 @@ export default async function GoogleCalendarConnectorSetupPage({
                     connectorKey="googleCalendar"
                     reconnectConnectionId={connection?.connectionId}
                     connected={connected}
-                    connectLabel="Connect Google Calendar"
+                    connectLabel="Connect"
                     reconnectLabel="Reconnect"
                     nangoFrontendConfig={nangoFrontendConfig}
                     disabled={!oauthConfigured}
@@ -225,7 +214,10 @@ export default async function GoogleCalendarConnectorSetupPage({
           forceMount
           className="mt-6 flex max-w-xl flex-col gap-6 data-[state=inactive]:hidden"
         >
-          <section className="soft-panel rounded-panel p-5">
+          {/* No wrapping card (owner review pull/45): a custom config tab's
+              content sits card-less, flush-left under the tabs, per the
+              app-connectors.html additional-config-tab treatment. */}
+          <section>
             <h2 className="mb-3 text-sm font-semibold text-foreground">
               Add an appointment schedule
             </h2>
