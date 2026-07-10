@@ -17,6 +17,7 @@ import type {
   ExtensionHostContext,
   HostConnectorConfigService,
   HostGoogleOAuthService,
+  NangoSystemSurface,
 } from "@cinatra-ai/sdk-extensions";
 import { registerGoogleCalendarConnector } from "./deps";
 import {
@@ -25,6 +26,11 @@ import {
 } from "./index";
 
 const PACKAGE_NAME = "@cinatra-ai/google-calendar-connector";
+
+// The connector's own Nango key — the shared Google OAuth per-service
+// connection this connector reads/deletes. Matches the `googleCalendar` key the
+// host's `ctx.nango.getPrimarySavedConnections()` roll-up returns.
+const GOOGLE_CALENDAR_NANGO_KEY = "googleCalendar";
 
 function hostConfig(ctx: ExtensionHostContext): HostConnectorConfigService {
   const provider = ctx.capabilities.resolveProviders("@cinatra-ai/host:connector-config")[0];
@@ -48,6 +54,30 @@ function hostGoogleOAuth(ctx: ExtensionHostContext): HostGoogleOAuthService {
   return provider.impl as HostGoogleOAuthService;
 }
 
+// The nango gateway (a `systemExtension`, activated unguarded on every boot)
+// registers its full host-facing surface under the reserved `nango-system`
+// capability id. Resolve it LAZILY per call (probe-safe), like the other host
+// services above. Used only by the user-scoped Disconnect action.
+function nangoSystem(ctx: ExtensionHostContext): NangoSystemSurface {
+  const provider = ctx.capabilities.resolveProviders("nango-system")[0];
+  if (!provider) {
+    throw new Error(
+      `${PACKAGE_NAME}: system capability "nango-system" is not registered — ` +
+        `the nango systemExtension must activate before connector calls.`,
+    );
+  }
+  return provider.impl as NangoSystemSurface;
+}
+
+async function requireUserId(ctx: ExtensionHostContext): Promise<string> {
+  const actor = await ctx.authSession.getActor();
+  const userId = actor?.userId;
+  if (!userId) {
+    throw new Error(`${PACKAGE_NAME}: no authenticated session user.`);
+  }
+  return userId;
+}
+
 export function register(ctx: ExtensionHostContext): void {
   registerGoogleCalendarConnector({
     readConnectorConfigFromDatabase: (connectorId, fallback) =>
@@ -57,13 +87,38 @@ export function register(ctx: ExtensionHostContext): void {
     oauth: {
       getStatus: () => hostGoogleOAuth(ctx).getStatus(),
     },
-    requireSessionUserId: async () => {
-      const actor = await ctx.authSession.getActor();
-      const userId = actor?.userId;
-      if (!userId) {
-        throw new Error(`${PACKAGE_NAME}: no authenticated session user.`);
+    requireSessionUserId: () => requireUserId(ctx),
+    getUserConnectionStatus: async () => {
+      const userId = await requireUserId(ctx);
+      // Read the user's saved Nango connections via the SDK render port (the
+      // same source the setup page's initial render reads). A missing
+      // `googleCalendar` entry (or a host too old to expose the getter) means
+      // no connection → disconnected.
+      const connections = await ctx.nango.getPrimarySavedConnections?.({
+        scope: "user",
+        userId,
+      });
+      return connections?.[GOOGLE_CALENDAR_NANGO_KEY] ? "connected" : "disconnected";
+    },
+    disconnectUserConnection: async () => {
+      const userId = await requireUserId(ctx);
+      const nango = nangoSystem(ctx);
+      // Revoke the upstream Nango connection, then clear this connector's saved
+      // pointer records so the next status read fails closed. (The #952
+      // connection-identity soft-delete lives in the host `@/lib` disconnect
+      // path and is best-effort even there; the delete below removes the
+      // credential itself.)
+      const saved = nango.getPrimarySavedNangoConnection(GOOGLE_CALENDAR_NANGO_KEY, {
+        scope: "user",
+        userId,
+      });
+      if (saved) {
+        await nango.deleteNangoConnection(saved.providerConfigKey, saved.connectionId);
       }
-      return userId;
+      await nango.clearNangoConnectionRecords(GOOGLE_CALENDAR_NANGO_KEY, {
+        scope: "user",
+        userId,
+      });
     },
   });
 
