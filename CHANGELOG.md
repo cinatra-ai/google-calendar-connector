@@ -34,7 +34,7 @@ project's merged pull request and release-tag history.
 - Contribute appointment schedules to the chat via the chat-user-context capability (#7)
 - chore: npm files allowlist + git-archive export-ignore (packaging hygiene) (#8)
 - ci: adopt the org ui-design-system gate (#9)
-- feat: register the appointment-schedules capability surface (cinatra#151 Stage 4) (#10)
+- feat: register the appointment-schedules capability surface (#10)
 - chore: Configure Renovate (#11)
 - docs(readme): expand README to the org standard (#25) (#26)
 - ci(ui-gate): ramp raw-JSX block to error (#27)
