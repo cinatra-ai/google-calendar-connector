@@ -14,9 +14,7 @@
     ".": "./src/index.ts",
     "./register": "./src/register.ts",
     "./setup-page": "./src/setup-page.tsx",
-    "./setup-actions": "./src/setup-actions.ts",
-    "./mcp-module": "./src/mcp/module.ts",
-    "./mcp-handlers": "./src/mcp/handlers.ts"
+    "./setup-actions": "./src/setup-actions.ts"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
