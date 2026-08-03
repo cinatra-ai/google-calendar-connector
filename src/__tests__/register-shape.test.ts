@@ -1,29 +1,39 @@
-// serverEntry `register(ctx)` — capability registration shape (cinatra#151
-// Stage 4).
-//
-// Pins:
-//   - the capability id set register(ctx) publishes (the appointment-schedules
-//     surface joins chat-user-context; the selfcheck MCP tool keeps riding
-//     ctx.mcp);
-//   - the appointment-schedules impl: structured `{ title, bookingPageUrl }`
-//     rows read through the ctx-bound deps (host connector-config service) —
-//     the host's CTA server action consumes exactly this shape instead of
-//     value-importing getStoredGoogleCalendarAppointments;
-//   - registration-only activation (no host-service I/O at register time).
+// serverEntry `register(ctx)` — capability registration shape, re-specified
+// for the contract-safe extraction (cinatra-ai/google-calendar-connector#55 /
+// cinatra-ai/cinatra#2367 S2): the appointment-schedules and chat-user-context
+// capability providers this entry used to register moved to
+// @cinatra-ai/google-appointment-schedules-connector along with the store that
+// backed them (S1/S2). register(ctx) now performs NO capability-provider
+// registration at all — it only binds the connection-management deps
+// (oauth.getStatus / getUserConnectionStatus / disconnectUserConnection) via
+// registerGoogleCalendarConnector, with no host-service I/O at activation.
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { register } from "../register";
+import { _resetGoogleCalendarDepsForTests, getGoogleCalendarDeps } from "../deps";
 import type { ExtensionHostContext } from "@cinatra-ai/sdk-extensions";
 
 type Registered = Map<string, { packageName: string; impl: unknown }[]>;
 
-function makeCtx(configRows: Record<string, unknown>) {
+function makeCtx() {
   const registered: Registered = new Map();
-  const read = vi.fn((connectorId: string, fallback: unknown) => {
-    return configRows[connectorId] ?? fallback;
-  });
-  const write = vi.fn();
+  const resolveProviders = vi.fn((capability: string) =>
+    capability === "@cinatra-ai/host:google-oauth"
+      ? [{ packageName: "@cinatra-ai/host", impl: { getStatus: vi.fn(async () => ({ status: "connected" as const })) } }]
+      : capability === "nango-system"
+        ? [
+            {
+              packageName: "@cinatra-ai/host",
+              impl: {
+                getPrimarySavedNangoConnection: vi.fn(),
+                deleteNangoConnection: vi.fn(),
+                clearNangoConnectionRecords: vi.fn(),
+              },
+            },
+          ]
+        : [],
+  );
   const ctx = {
     capabilities: {
       registerProvider: (capability: string, provider: { packageName: string; impl: unknown }) => {
@@ -31,67 +41,45 @@ function makeCtx(configRows: Record<string, unknown>) {
         list.push(provider);
         registered.set(capability, list);
       },
-      resolveProviders: (capability: string) =>
-        capability === "@cinatra-ai/host:connector-config"
-          ? [{ packageName: "@cinatra-ai/host", impl: { read, write, delete: vi.fn() } }]
-          : [],
+      resolveProviders,
     },
     authSession: { getActor: vi.fn(async () => ({ userId: "u1" })) },
-    mcp: { registerTool: vi.fn() },
-    settings: { set: vi.fn(), get: vi.fn(), delete: vi.fn() },
+    nango: { getPrimarySavedConnections: vi.fn(async () => ({})) },
   } as unknown as ExtensionHostContext;
-  return { ctx, registered, read };
+  return { ctx, registered, resolveProviders };
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  _resetGoogleCalendarDepsForTests();
 });
 
-describe("register(ctx) — capability shape", () => {
-  it("registers chat-user-context + appointment-schedules and performs NO host-service I/O at activation", () => {
-    const { ctx, registered, read } = makeCtx({});
+describe("register(ctx) — capability shape (post-extraction)", () => {
+  it("registers NO capability providers and performs NO host-service I/O at activation", () => {
+    const { ctx, registered, resolveProviders } = makeCtx();
     register(ctx);
-    expect([...registered.keys()].sort()).toEqual([
-      "appointment-schedules",
-      "chat-user-context",
-    ]);
-    expect(read).not.toHaveBeenCalled();
+    expect([...registered.keys()]).toEqual([]);
+    expect(resolveProviders).not.toHaveBeenCalled();
   });
 
-  it("appointment-schedules: structured per-user schedules from the synced store (sanitized: public booking URLs only)", () => {
-    const { ctx, registered } = makeCtx({
-      "google_calendar_user:u1": {
-        calendarAppointments: [
-          {
-            id: "a1",
-            title: "Intro call",
-            bookingPageUrl: "https://calendar.app.google/abc123",
-          },
-          {
-            id: "a2",
-            title: "Private link (dropped by sanitize)",
-            bookingPageUrl: "https://evil.example.com/xyz",
-          },
-        ],
-      },
-    });
+  it("binds only the connection-management deps (oauth, getUserConnectionStatus, disconnectUserConnection)", () => {
+    const { ctx } = makeCtx();
     register(ctx);
-    const provider = registered.get("appointment-schedules")?.[0];
-    expect(provider?.packageName).toBe("@cinatra-ai/google-calendar-connector");
-    const impl = provider?.impl as {
-      getSchedules(input: { userId?: string }): { title: string; bookingPageUrl: string }[];
-    };
-    expect(impl.getSchedules({ userId: "u1" })).toEqual([
-      { title: "Intro call", bookingPageUrl: "https://calendar.app.google/abc123" },
+    const deps = getGoogleCalendarDeps();
+    expect(Object.keys(deps).sort()).toEqual([
+      "disconnectUserConnection",
+      "getUserConnectionStatus",
+      "oauth",
     ]);
   });
 
-  it("appointment-schedules: empty store -> empty schedules (no throw)", () => {
-    const { ctx, registered } = makeCtx({});
+  it("oauth.getStatus() lazily resolves the host google-oauth service (no eager I/O)", async () => {
+    const { ctx, resolveProviders } = makeCtx();
     register(ctx);
-    const impl = registered.get("appointment-schedules")?.[0]?.impl as {
-      getSchedules(input: { userId?: string }): unknown[];
-    };
-    expect(impl.getSchedules({ userId: "u1" })).toEqual([]);
+    expect(resolveProviders).not.toHaveBeenCalled();
+
+    const status = await getGoogleCalendarDeps().oauth.getStatus();
+    expect(resolveProviders).toHaveBeenCalledWith("@cinatra-ai/host:google-oauth");
+    expect(status).toEqual({ status: "connected" });
   });
 });
