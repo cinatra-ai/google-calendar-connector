@@ -1,15 +1,14 @@
 # Google Calendar
 
-Google Calendar connector for Cinatra. Stores users' public appointment-schedule booking links (`calendar.app.google`) and surfaces them to Cinatra agents, so agents can embed the right scheduling URL in outbound messages without manual link management. Full documentation lives in the Integrations hub at https://docs.cinatra.ai/integrations/google-calendar/
+Google Calendar connector for Cinatra. Lets a workspace member connect their Google Calendar account via OAuth through Nango, so other Cinatra features can identify which calendar to act on. Full documentation lives in the Integrations hub at https://docs.cinatra.ai/integrations/
 
 ## Works with
 
 - Cinatra (connector kind: `connector`)
+- `@cinatra-ai/google-appointment-schedules-connector` — the dependent connector that stores and surfaces users' appointment-schedule booking links, reusing this connector's account connection
 
 ## Capabilities
 
-- Register a Google Calendar appointment-schedule link per workspace user
-- List stored appointment schedules via the `google_calendar_appointments_list` MCP tool
-- Contribute scheduling links to the chat system prompt via the `chat-user-context` capability
-- Surface structured `{ title, bookingPageUrl }` rows to host call-to-action surfaces via the `appointment-schedules` capability
-- Diagnostic settings round-trip via the `google_calendar_extension_selfcheck` MCP tool
+- Connect / reconnect / disconnect a workspace member's Google Calendar account via Nango OAuth
+- Report the connection status (connected / disconnected) via a live re-probe (the Check action)
+- Gate the connect flow on the shared Google OAuth client's configuration state
