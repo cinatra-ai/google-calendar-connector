@@ -19,10 +19,11 @@
 //   • SearchParamToast — the codes-only flash island (issue #44), replacing the
 //     two in-page transient banners.
 //
-// Tab order (checklist items 16–17): Setup first, then the connector's own
-// "Appointment schedules" custom tab, then the reserved Help tab LAST. One
-// Google Calendar account per user; schedules are stored sub-records under it
-// (single connection).
+// Tab order: Setup first, then the reserved Help tab LAST. One Google
+// Calendar account per user (single connection). The connector's own
+// "Appointment schedules" custom tab + its form moved to
+// @cinatra-ai/google-appointment-schedules-connector (cinatra-ai/cinatra#2367
+// S1/S2), so this page now composes only the connection-management surface.
 
 import type { ExtensionHostContext } from "@cinatra-ai/sdk-extensions";
 import { ConnectorSetupPage } from "@cinatra-ai/sdk-ui/connector-setup-page";
@@ -30,23 +31,13 @@ import { ConnectorSetupColumns } from "@cinatra-ai/sdk-ui/connector-setup-column
 import { Tabs, TabsContent, TabsListRow, TabsTrigger } from "@cinatra-ai/sdk-ui/tabs";
 import { SearchParamToast } from "@cinatra-ai/sdk-ui/search-param-toast";
 import { NangoUserConnectButton } from "@cinatra-ai/sdk-ui/nango";
-import { LinkIcon } from "lucide-react";
-import { Button } from "./components/ui/button";
 import { Link } from "./components/ui/link";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "./components/ui/input-group";
-import { Field, FieldDescription, FieldLabel } from "./components/ui/field";
 import { GCAL_FLASH_TOASTS } from "./gcal-flash";
 import { ConnectionStatusPanel, DisconnectAction } from "./setup-client";
 import {
-  addGoogleCalendarAppointmentScheduleAction,
   checkGoogleCalendarStatusAction,
   disconnectGoogleCalendarConnectionAction,
 } from "./setup-actions";
-import { getStoredGoogleCalendarAppointments } from "./index";
 import { getGoogleCalendarDeps } from "./deps";
 
 // Nango frontend config + the user's primary saved connection are read from the
@@ -59,16 +50,7 @@ type ConnectorSetupPageProps = {
   ctx: ExtensionHostContext;
 };
 
-function pick(v: string | string[] | undefined): string | undefined {
-  return Array.isArray(v) ? v[0] : v;
-}
-
-function formatTimestamp(ts: string): string {
-  return new Date(ts).toLocaleString();
-}
-
 export default async function GoogleCalendarConnectorSetupPage({
-  searchParams,
   ctx,
 }: ConnectorSetupPageProps) {
   const actor = await ctx.authSession.getActor();
@@ -95,20 +77,6 @@ export default async function GoogleCalendarConnectorSetupPage({
     oauthConfigured = true;
   }
 
-  const { appointments, syncedAt } = getStoredGoogleCalendarAppointments(
-    actor.userId,
-  );
-
-  // The add-schedule action redirects back here with no `tab` param, so default
-  // to the Appointment schedules tab whenever there is feedback to show for it;
-  // otherwise Setup (the primary tab) is the entry point.
-  const notice = pick(searchParams.notice);
-  const error = pick(searchParams.error);
-  const defaultTab =
-    notice === "schedule-saved" || error === "schedule-add-failed"
-      ? "appointments"
-      : "setup";
-
   return (
     // Standard connector-setup PAGE chrome — header + content in the SAME Wide
     // column. The status badge that once sat top-right of the header now lives
@@ -124,10 +92,9 @@ export default async function GoogleCalendarConnectorSetupPage({
           sites are gone; outcome codes toast via the static message map. */}
       <SearchParamToast toasts={GCAL_FLASH_TOASTS} />
 
-      <Tabs defaultValue={defaultTab} className="w-full">
+      <Tabs defaultValue="setup" className="w-full">
         <TabsListRow aria-label="Google Calendar connector setup">
           <TabsTrigger value="setup">Setup</TabsTrigger>
-          <TabsTrigger value="appointments">Appointment schedules</TabsTrigger>
           {/* Help is RESERVED and ALWAYS LAST (checklist items 16–17). */}
           <TabsTrigger value="help">Help</TabsTrigger>
         </TabsListRow>
@@ -207,92 +174,6 @@ export default async function GoogleCalendarConnectorSetupPage({
           />
         </TabsContent>
 
-        {/* APPOINTMENT SCHEDULES — the connector's own custom tab. A custom
-            tab's content NARROWS to max-w-xl · 576px, flush-left (item 19). */}
-        <TabsContent
-          value="appointments"
-          forceMount
-          className="mt-6 flex max-w-xl flex-col gap-6 data-[state=inactive]:hidden"
-        >
-          {/* No wrapping card (owner review pull/45): a custom config tab's
-              content sits card-less, flush-left under the tabs, per the
-              app-connectors.html additional-config-tab treatment. */}
-          <section>
-            <h2 className="mb-3 text-sm font-semibold text-foreground">
-              Add an appointment schedule
-            </h2>
-            <form
-              action={addGoogleCalendarAppointmentScheduleAction}
-              className="grid gap-4"
-            >
-              <Field>
-                <FieldLabel>Booking page URL</FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <LinkIcon aria-hidden="true" />
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    type="url"
-                    name="bookingPageUrl"
-                    required
-                    placeholder="https://calendar.app.google/..."
-                  />
-                </InputGroup>
-                <FieldDescription>
-                  A public Google Calendar appointment-schedule link
-                  (calendar.app.google/…) the assistant shares so people can book
-                  time with you — a share link, not a calendar sync. Get one in
-                  Google Calendar:{" "}
-                  <Link
-                    href="https://support.google.com/calendar/answer/10729749"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Create → Appointment schedule
-                  </Link>
-                  , then paste its public link here.
-                </FieldDescription>
-              </Field>
-              <div>
-                <Button type="submit">Add schedule</Button>
-              </div>
-            </form>
-          </section>
-
-          {appointments.length > 0 ? (
-            <section className="soft-panel rounded-panel p-5 flex flex-col gap-3">
-              <h2 className="text-sm font-semibold text-foreground">
-                Saved schedules
-              </h2>
-              {appointments.map((schedule) => (
-                <div
-                  key={schedule.id}
-                  className="rounded-control border border-line bg-surface px-4 py-3"
-                >
-                  <p className="text-sm font-semibold text-foreground">{schedule.title}</p>
-                  <p className="mt-1 break-all text-sm text-muted-foreground">
-                    {schedule.bookingPageUrl}
-                  </p>
-                  {schedule.description ? (
-                    <p className="mt-2 text-sm text-muted-foreground">{schedule.description}</p>
-                  ) : null}
-                </div>
-              ))}
-              {syncedAt ? (
-                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                  Last updated {formatTimestamp(syncedAt)}
-                </p>
-              ) : null}
-            </section>
-          ) : (
-            <section className="soft-panel rounded-panel p-5">
-              <p className="text-sm text-muted-foreground">
-                No appointment schedules saved yet.
-              </p>
-            </section>
-          )}
-        </TabsContent>
-
         {/* HELP — reserved, always LAST, read-only (no form, no Save). Narrow. */}
         <TabsContent
           value="help"
@@ -300,10 +181,9 @@ export default async function GoogleCalendarConnectorSetupPage({
           className="mt-6 flex max-w-xl flex-col gap-5 data-[state=inactive]:hidden"
         >
           <p className="text-sm leading-6 text-muted-foreground">
-            Cinatra keeps a list of your Google Calendar appointment-schedule
-            share links on file so agents can hand the right booking link to
-            someone who wants time on your calendar, without you managing the
-            link by hand. It does not read your calendar events.
+            Cinatra uses your connected Google Calendar account to identify
+            which calendar other Cinatra features act on. It does not read
+            your calendar events.
           </p>
           <div>
             <h3 className="mb-1 text-sm font-semibold text-foreground">Prerequisite</h3>
@@ -328,16 +208,8 @@ export default async function GoogleCalendarConnectorSetupPage({
             <h3 className="mb-1 text-sm font-semibold text-foreground">Connect your account</h3>
             <p className="text-sm leading-6 text-muted-foreground">
               On the Setup tab, sign in with Google. This confirms which Google
-              account the schedules belong to. Use Disconnect to remove the
-              connection; the connector stops working until you connect again.
-            </p>
-          </div>
-          <div>
-            <h3 className="mb-1 text-sm font-semibold text-foreground">Add a booking link</h3>
-            <p className="text-sm leading-6 text-muted-foreground">
-              In Google Calendar, choose Create → Appointment schedule, then copy
-              its public link (calendar.app.google/…) into the Appointment
-              schedules tab.
+              account is connected. Use Disconnect to remove the connection;
+              the connector stops working until you connect again.
             </p>
           </div>
         </TabsContent>

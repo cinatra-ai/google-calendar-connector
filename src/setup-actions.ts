@@ -6,10 +6,14 @@
 // `requireExtensionAction(pkg, "read")` — the google-calendar descriptor is
 // `defaultVisibility: "workspace"` and the setup page gates on
 // `enforceConnectorPolicy(..., "read")`, so these user-scoped self-service
-// actions (manage MY OWN appointment schedules / connection) must NOT require
-// admin. `"read"` admits any workspace member; the operation is self-scoped to
-// the session user id resolved AFTER the guard via the connector's injected
-// deps (so there is NO `@/lib/*` import).
+// actions (manage MY OWN connection) must NOT require admin. `"read"` admits
+// any workspace member; the operation is self-scoped to the session user id
+// resolved AFTER the guard via the connector's injected deps (so there is NO
+// `@/lib/*` import).
+//
+// The appointment-schedule add action that used to live here moved to
+// @cinatra-ai/google-appointment-schedules-connector (cinatra-ai/cinatra#2367
+// S1/S2) along with its store.
 //
 // Flash protocol (issue #44): actions redirect back with a canonical outcome
 // CODE (`?notice=<code>` / `?error=<code>`) — never raw error text — which the
@@ -19,27 +23,9 @@
 import { redirect } from "next/navigation";
 import { requireExtensionAction } from "@cinatra-ai/sdk-extensions";
 import { getGoogleCalendarDeps } from "./deps";
-import { addUserGoogleCalendarAppointmentSchedule } from "./index";
 
 const GOOGLE_CALENDAR_PACKAGE_ID = "@cinatra-ai/google-calendar-connector";
 const SETUP_PAGE = "/connectors/cinatra-ai/google-calendar-connector/setup";
-
-export async function addGoogleCalendarAppointmentScheduleAction(formData: FormData) {
-  await requireExtensionAction(GOOGLE_CALENDAR_PACKAGE_ID, "read");
-
-  const userId = await getGoogleCalendarDeps().requireSessionUserId();
-  const url = String(formData.get("bookingPageUrl") ?? "").trim();
-
-  try {
-    await addUserGoogleCalendarAppointmentSchedule(userId, url);
-  } catch {
-    // Canonical code only — the raw error text is never reflected into the URL
-    // (and therefore never into a toast).
-    redirect(`${SETUP_PAGE}?error=schedule-add-failed`);
-  }
-
-  redirect(`${SETUP_PAGE}?notice=schedule-saved`);
-}
 
 // Re-probe the invoking user's live Google Calendar connection status for the
 // Connection status card's Check action (app-connectors.html §II Check flow).

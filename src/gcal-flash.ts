@@ -16,14 +16,11 @@
 import type { SearchParamToastConfig } from "@cinatra-ai/sdk-ui/search-param-toast";
 
 export const GCAL_NOTICE_MESSAGES = {
-  "schedule-saved": "Appointment schedule saved.",
   disconnected:
     "Google Calendar disconnected. The connector will stop working until you connect it again.",
 } as const;
 
 export const GCAL_ERROR_MESSAGES = {
-  "schedule-add-failed":
-    "Could not add the appointment schedule. Check the booking page URL and try again.",
   "disconnect-failed": "Could not disconnect Google Calendar. Try again.",
 } as const;
 
