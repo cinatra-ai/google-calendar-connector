@@ -51,6 +51,7 @@
       "name": "Cinatra"
     },
     "displayName": "Google Calendar",
+    "logo": "./cinatra/logo.svg",
     "dependencies": [],
     "serverEntry": "./register",
     "requestedHostPorts": [
