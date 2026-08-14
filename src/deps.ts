@@ -2,13 +2,6 @@
 // See packages/connector-gmail/src/deps.ts for the pattern + rationale.
 
 export interface GoogleCalendarConnectorDeps {
-  readConnectorConfigFromDatabase: <T>(connectorId: string, fallback: T) => T;
-  writeConnectorConfigToDatabase: (connectorId: string, value: unknown) => void;
-  // Resolves the current session user id for the relocated user-scoped
-  // appointment-schedule action. Host binds this to its auth-session lookup
-  // (e.g. requireAuthSession().user.id) so the connector carries no `@/lib/*`
-  // import. Throws if there is no authenticated session.
-  requireSessionUserId: () => Promise<string>;
   // Connector-level Google-OAuth status (no userId scope). Host binds this to
   // the `@cinatra-ai/host:google-oauth` service. Drives the connect-button
   // prerequisite on the setup page: connecting Calendar requires the shared
