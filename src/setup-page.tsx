@@ -110,20 +110,23 @@ export default async function GoogleCalendarConnectorSetupPage({
             state="ready"
             fields={
               <div className="flex flex-col gap-6">
-                <section className="soft-panel rounded-panel p-5">
-                  {connection ? (
-                    <>
-                      <p className="text-sm font-medium text-foreground">
-                        Google Calendar account
-                      </p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {`Connected${connection.email ? ` as ${connection.email}` : ""}`}
-                      </p>
-                    </>
-                  ) : (
-                    // Not-connected card (owner review pull/45): the card holds
-                    // only the OAuth-credentials prerequisite line, with "Google
-                    // OAuth credentials" linking to that connector's setup page.
+                {connection ? (
+                  <section className="soft-panel rounded-panel p-5">
+                    <p className="text-sm font-medium text-foreground">
+                      Google Calendar account
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {`Connected${connection.email ? ` as ${connection.email}` : ""}`}
+                    </p>
+                  </section>
+                ) : oauthConfigured ? null : (
+                  // Not-connected + OAuth-not-configured card (owner review
+                  // pull/45; hint gating restored, #60): the card holds only the
+                  // OAuth-credentials prerequisite line, with "Google OAuth
+                  // credentials" linking to that connector's setup page. Gated
+                  // on `oauthConfigured` (not on `!connection` alone, #23) so it
+                  // never shows once the shared client is already configured.
+                  <section className="soft-panel rounded-panel p-5">
                     <p className="text-sm leading-6 text-muted-foreground">
                       Connecting requires shared{" "}
                       <Link href="/connectors/cinatra-ai/google-oauth-connector/setup">
@@ -131,8 +134,8 @@ export default async function GoogleCalendarConnectorSetupPage({
                       </Link>
                       .
                     </p>
-                  )}
-                </section>
+                  </section>
+                )}
 
                 {/* Actions — side by side, never stacked (spec §II item 7):
                     Connect (indigo primary, the Nango OAuth trigger) always

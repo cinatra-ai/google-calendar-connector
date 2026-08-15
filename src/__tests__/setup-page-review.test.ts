@@ -48,6 +48,34 @@ describe("setup-page — owner review pull/45 changes (carried forward)", () => 
   });
 });
 
+describe("setup-page — OAuth-prerequisite hint gating (regression #60, restores #23 / gmail-connector pattern)", () => {
+  it('gates the "requires shared Google OAuth credentials" hint on `oauthConfigured`, not on `!connection` alone', () => {
+    // The not-connected branch must check `oauthConfigured` before rendering
+    // the hint — `connection ? (…) : oauthConfigured ? null : (…hint…)` — so
+    // the hint disappears once the shared client is configured, even while
+    // Calendar itself is still not connected.
+    const notConnectedIdx = flat.indexOf(") : oauthConfigured ? null : (");
+    expect(notConnectedIdx).toBeGreaterThan(-1);
+    const hintTextIdx = flat.indexOf("Connecting requires shared", notConnectedIdx);
+    expect(hintTextIdx).toBeGreaterThan(notConnectedIdx);
+    // Exactly one site on the whole page carries this exact prerequisite
+    // sentence (the Setup-tab card) — the Help tab's own prose deliberately
+    // reads "Connecting requires A shared…", so it never collides with this
+    // count.
+    const occurrences = flat.split("Connecting requires shared").length - 1;
+    expect(occurrences).toBe(1);
+  });
+
+  it("renders no OAuth-credentials hint at all once connected, regardless of oauthConfigured", () => {
+    // The connected branch is its own independent section with no hint copy.
+    const connectedBranch = flat.match(
+      /\{connection \? \( <section className="soft-panel rounded-panel p-5"> ([\s\S]*?) <\/section> \) : oauthConfigured/,
+    )?.[1];
+    expect(connectedBranch).toBeTruthy();
+    expect(connectedBranch).not.toContain("Connecting requires shared");
+  });
+});
+
 describe("setup-page — appointment-schedules extraction (cinatra#2367 S2)", () => {
   it("carries no Appointment schedules tab, form, or saved-schedule rendering", () => {
     // Checks the LIVE surface (JSX tags / user-facing copy), not the file's
