@@ -31,7 +31,7 @@ import { ConnectorSetupColumns } from "@cinatra-ai/sdk-ui/connector-setup-column
 import { Tabs, TabsContent, TabsListRow, TabsTrigger } from "@cinatra-ai/sdk-ui/tabs";
 import { SearchParamToast } from "@cinatra-ai/sdk-ui/search-param-toast";
 import { NangoUserConnectButton } from "@cinatra-ai/sdk-ui/nango";
-import { Link } from "./components/ui/link";
+import { Link } from "./ui/link";
 import { GCAL_FLASH_TOASTS } from "./gcal-flash";
 import { ConnectionStatusPanel, DisconnectAction } from "./setup-client";
 import {

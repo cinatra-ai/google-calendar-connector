@@ -18,8 +18,8 @@ import * as React from "react";
 import { RefreshCw, Unplug } from "lucide-react";
 import { ConnectionStatusCard } from "@cinatra-ai/sdk-ui/connection-status-card";
 import type { ConnectionStatus } from "@cinatra-ai/sdk-ui/connection-status-badge";
-import { Button } from "./components/ui/button";
 import {
+  Button,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -29,7 +29,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "./components/ui/dialog";
+} from "@cinatra-ai/design-primitives";
+
 
 export function ConnectionStatusPanel({
   initialConnected,
